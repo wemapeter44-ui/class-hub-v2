@@ -1,13 +1,62 @@
-function Dashboard({ students }) {
-  const totalStudents = students.length;
-  const totalLessons = 15; // tutahesabu baadaye kutoka timetable
-  const totalTasks = 0;
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
-  const stats = [
-    { label: 'Members', value: totalStudents, color: 'from-cyan-400 to-blue-500' },
-    { label: 'Modules', value: 7, color: 'from-indigo-400 to-purple-500' },
-    { label: 'Lessons', value: totalLessons, color: 'from-green-400 to-emerald-500' },
-    { label: 'Tasks', value: totalTasks, color: 'from-amber-400 to-orange-500' }
+function Dashboard() {
+  const [stats, setStats] = useState({
+    students: 0,
+    tasks: 0,
+    resources: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  async function fetchStats() {
+    setLoading(true);
+
+    const [studentsRes, tasksRes, resourcesRes] = await Promise.all([
+      supabase.from('students').select('*', { count: 'exact', head: true }),
+      supabase.from('tasks').select('*', { count: 'exact', head: true }),
+      supabase.from('resources').select('*', { count: 'exact', head: true }),
+    ]);
+
+    setStats({
+      students: studentsRes.count || 0,
+      tasks: tasksRes.count || 0,
+      resources: resourcesRes.count || 0,
+    });
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const cards = [
+    {
+      label: 'Members',
+      value: stats.students,
+      color: 'from-cyan-400 to-blue-500',
+    },
+    {
+      label: 'Modules',
+      value: 7,
+      color: 'from-indigo-400 to-purple-500',
+    },
+    {
+      label: 'Lessons',
+      value: 15,
+      color: 'from-green-400 to-emerald-500',
+    },
+    {
+      label: 'Tasks',
+      value: stats.tasks,
+      color: 'from-amber-400 to-orange-500',
+    },
+    {
+      label: 'Resources',
+      value: stats.resources,
+      color: 'from-pink-400 to-rose-500',
+    },
   ];
 
   return (
@@ -15,17 +64,17 @@ function Dashboard({ students }) {
       <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
       <p className="text-slate-400 mb-6">Welcome to your Class Hub</p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(stat => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map(card => (
           <div
-            key={stat.label}
+            key={card.label}
             className="bg-slate-900 border border-slate-800 rounded-xl p-4"
           >
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-              {stat.label}
+              {card.label}
             </p>
-            <p className={`text-3xl font-bold mt-2 bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-              {stat.value}
+            <p className={`text-3xl font-bold mt-2 bg-gradient-to-r ${card.color} bg-clip-text text-transparent`}>
+              {loading ? '...' : card.value}
             </p>
           </div>
         ))}

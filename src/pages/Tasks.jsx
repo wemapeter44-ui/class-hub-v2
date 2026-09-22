@@ -1,33 +1,77 @@
-import { useState } from 'react';
-import { initialTasks } from '../data/tasks';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
-function Tasks({ tasks, setTasks }) {
+function Tasks() {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [unit, setUnit] = useState('');
 
-  function addTask(e) {
+  async function fetchTasks() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      setLoading(false);
+      return;
+    }
+
+    setTasks(data);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  async function addTask(e) {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const newTask = {
-      id: Date.now(),
-      title: title.trim(),
-      description: description.trim(),
-      dueDate,
-      unit: unit.trim(),
-      status: 'Pending'
-    };
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert([
+        {
+          title: title.trim(),
+          description: description.trim(),
+          due_date: dueDate,
+          unit: unit.trim(),
+          status: 'Pending'
+        },
+      ])
+      .select();
 
-    setTasks([...tasks, newTask]);
+    if (error) {
+      console.error('Error adding task:', error);
+      alert('Failed to add task: ' + error.message);
+      return;
+    }
+
+    setTasks([data[0], ...tasks]);
     setTitle('');
     setDescription('');
     setDueDate('');
     setUnit('');
   }
 
-  function deleteTask(id) {
+  async function deleteTask(id) {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task: ' + error.message);
+      return;
+    }
+
     setTasks(tasks.filter(t => t.id !== id));
   }
 
@@ -35,7 +79,7 @@ function Tasks({ tasks, setTasks }) {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-white mb-2">Tasks</h1>
       <p className="text-slate-400 mb-6">
-        {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+        {loading ? 'Loading...' : `${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`}
       </p>
 
       <form onSubmit={addTask} className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
@@ -79,50 +123,52 @@ function Tasks({ tasks, setTasks }) {
         </button>
       </form>
 
-      <div className="space-y-3">
-        {tasks.length === 0 && (
-          <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
-            No tasks yet. Add one above.
-          </div>
-        )}
-
-        {tasks.map(task => (
-          <div
-            key={task.id}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition"
-          >
-            <div className="flex justify-between items-start gap-4">
-              <div className="flex-1">
-                <h3 className="font-semibold text-white">{task.title}</h3>
-                {task.description && (
-                  <p className="text-sm text-slate-400 mt-1">{task.description}</p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {task.unit && (
-                    <span className="text-xs text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded px-2 py-1">
-                      {task.unit}
-                    </span>
+      {loading ? (
+        <div className="text-center py-12 text-slate-500">Loading tasks...</div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
+          No tasks yet. Add one above.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {tasks.map(task => (
+            <div
+              key={task.id}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition"
+            >
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-white">{task.title}</h3>
+                  {task.description && (
+                    <p className="text-sm text-slate-400 mt-1">{task.description}</p>
                   )}
-                  {task.dueDate && (
-                    <span className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded px-2 py-1">
-                      Due: {task.dueDate}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {task.unit && (
+                      <span className="text-xs text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded px-2 py-1">
+                        {task.unit}
+                      </span>
+                    )}
+                    {task.due_date && (
+                      <span className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded px-2 py-1">
+                        Due: {task.due_date}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400 bg-slate-800 rounded px-2 py-1">
+                      {task.status}
                     </span>
-                  )}
-                  <span className="text-xs text-slate-400 bg-slate-800 rounded px-2 py-1">
-                    {task.status}
-                  </span>
+                  </div>
                 </div>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-red-400 hover:text-red-300 text-sm px-2 py-1 rounded hover:bg-red-500/10 transition"
+                >
+                  Delete
+                </button>
               </div>
-              <button
-                onClick={() => deleteTask(task.id)}
-                className="text-red-400 hover:text-red-300 text-sm px-2 py-1 rounded hover:bg-red-500/10 transition"
-              >
-                Delete
-              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

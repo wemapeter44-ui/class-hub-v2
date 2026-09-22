@@ -1,29 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StudentCard from '../components/StudentCard';
+import { supabase } from '../lib/supabase';
 
-function Students({ students, setStudents }) {
+function Students() {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [registration, setRegistration] = useState('');
   const [phone, setPhone] = useState('');
 
-  function addStudent(e) {
+  async function fetchStudents() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching students:', error);
+      setLoading(false);
+      return;
+    }
+
+    setStudents(data);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  async function addStudent(e) {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const newStudent = {
-      id: Date.now(),
-      name: name.trim(),
-      registration: registration.trim(),
-      phone: phone.trim(),
-    };
+    const { data, error } = await supabase
+      .from('students')
+      .insert([
+        {
+          name: name.trim(),
+          registration: registration.trim(),
+          phone: phone.trim(),
+        },
+      ])
+      .select();
 
-    setStudents([...students, newStudent]);
+    if (error) {
+      console.error('Error adding student:', error);
+      alert('Failed to add student: ' + error.message);
+      return;
+    }
+
+    setStudents([data[0], ...students]);
     setName('');
     setRegistration('');
     setPhone('');
   }
 
-  function deleteStudent(id) {
+  async function deleteStudent(id) {
+    const { error } = await supabase
+      .from('students')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting student:', error);
+      alert('Failed to delete student: ' + error.message);
+      return;
+    }
+
     setStudents(students.filter(s => s.id !== id));
   }
 
@@ -31,7 +76,7 @@ function Students({ students, setStudents }) {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-white mb-2">Students</h1>
       <p className="text-slate-400 mb-6">
-        {students.length} {students.length === 1 ? 'student' : 'students'}
+        {loading ? 'Loading...' : `${students.length} ${students.length === 1 ? 'student' : 'students'}`}
       </p>
 
       <form onSubmit={addStudent} className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
@@ -67,15 +112,23 @@ function Students({ students, setStudents }) {
         </button>
       </form>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {students.map(student => (
-          <StudentCard
-            key={student.id}
-            student={student}
-            onDelete={deleteStudent}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-12 text-slate-500">Loading students...</div>
+      ) : students.length === 0 ? (
+        <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
+          No students yet. Add one above.
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {students.map(student => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              onDelete={deleteStudent}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

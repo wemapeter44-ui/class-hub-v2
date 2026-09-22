@@ -5,28 +5,22 @@ import Students from './pages/Students';
 import Timetable from './pages/Timetable';
 import Tasks from './pages/Tasks';
 import Resources from './pages/Resources';
-import { initialStudents } from './data/students';
-import { initialTasks } from './data/tasks';
-import { initialResources } from './data/resources';
 
 function App() {
   const [activePage, setActivePage] = useState('dashboard');
-  const [students, setStudents] = useState(initialStudents);
-  const [tasks, setTasks] = useState(initialTasks);
-  const [resources, setResources] = useState(initialResources);
 
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
-        return <Dashboard students={students} />;
+        return <Dashboard />;
       case 'students':
-        return <Students students={students} setStudents={setStudents} />;
+        return <Students />;
       case 'timetable':
         return <Timetable />;
       case 'tasks':
-        return <Tasks tasks={tasks} setTasks={setTasks} />;
+        return <Tasks />;
       case 'resources':
-        return <Resources resources={resources} setResources={setResources} />;
+        return <Resources />;
       default:
         return (
           <div className="p-6 text-slate-400">
