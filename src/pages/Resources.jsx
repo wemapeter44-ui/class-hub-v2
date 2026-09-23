@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useRealtime } from '../hooks/useRealtime';
 
 function Resources() {
   const [resources, setResources] = useState([]);
@@ -10,7 +11,6 @@ function Resources() {
   const [unit, setUnit] = useState('');
 
   async function fetchResources() {
-    setLoading(true);
     const { data, error } = await supabase
       .from('resources')
       .select('*')
@@ -30,11 +30,16 @@ function Resources() {
     fetchResources();
   }, []);
 
+  // Realtime updates
+  useRealtime('resources', () => {
+    fetchResources();
+  });
+
   async function addResource(e) {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('resources')
       .insert([
         {
@@ -43,8 +48,7 @@ function Resources() {
           link: link.trim(),
           unit: unit.trim(),
         },
-      ])
-      .select();
+      ]);
 
     if (error) {
       console.error('Error adding resource:', error);
@@ -52,7 +56,6 @@ function Resources() {
       return;
     }
 
-    setResources([data[0], ...resources]);
     setTitle('');
     setDescription('');
     setLink('');
@@ -68,10 +71,7 @@ function Resources() {
     if (error) {
       console.error('Error deleting resource:', error);
       alert('Failed to delete resource: ' + error.message);
-      return;
     }
-
-    setResources(resources.filter(r => r.id !== id));
   }
 
   return (

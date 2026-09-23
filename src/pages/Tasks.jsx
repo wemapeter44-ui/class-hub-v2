@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useRealtime } from '../hooks/useRealtime';
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -10,7 +11,6 @@ function Tasks() {
   const [unit, setUnit] = useState('');
 
   async function fetchTasks() {
-    setLoading(true);
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -30,11 +30,16 @@ function Tasks() {
     fetchTasks();
   }, []);
 
+  // Realtime updates
+  useRealtime('tasks', () => {
+    fetchTasks();
+  });
+
   async function addTask(e) {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tasks')
       .insert([
         {
@@ -44,8 +49,7 @@ function Tasks() {
           unit: unit.trim(),
           status: 'Pending'
         },
-      ])
-      .select();
+      ]);
 
     if (error) {
       console.error('Error adding task:', error);
@@ -53,7 +57,6 @@ function Tasks() {
       return;
     }
 
-    setTasks([data[0], ...tasks]);
     setTitle('');
     setDescription('');
     setDueDate('');
@@ -69,10 +72,7 @@ function Tasks() {
     if (error) {
       console.error('Error deleting task:', error);
       alert('Failed to delete task: ' + error.message);
-      return;
     }
-
-    setTasks(tasks.filter(t => t.id !== id));
   }
 
   return (

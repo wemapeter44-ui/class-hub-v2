@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useRealtime } from '../hooks/useRealtime';
 
 function Dashboard() {
   const [stats, setStats] = useState({
@@ -10,8 +11,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   async function fetchStats() {
-    setLoading(true);
-
     const [studentsRes, tasksRes, resourcesRes] = await Promise.all([
       supabase.from('students').select('*', { count: 'exact', head: true }),
       supabase.from('tasks').select('*', { count: 'exact', head: true }),
@@ -30,6 +29,11 @@ function Dashboard() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  // Realtime updates kwa tables zote 3
+  useRealtime('students', () => fetchStats());
+  useRealtime('tasks', () => fetchStats());
+  useRealtime('resources', () => fetchStats());
 
   const cards = [
     {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import StudentCard from '../components/StudentCard';
 import { supabase } from '../lib/supabase';
+import { useRealtime } from '../hooks/useRealtime';
 
 function Students() {
   const [students, setStudents] = useState([]);
@@ -10,7 +11,6 @@ function Students() {
   const [phone, setPhone] = useState('');
 
   async function fetchStudents() {
-    setLoading(true);
     const { data, error } = await supabase
       .from('students')
       .select('*')
@@ -29,6 +29,11 @@ function Students() {
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  // Realtime: fetch data upya kila change inatokea
+  useRealtime('students', () => {
+    fetchStudents();
+  });
 
   async function addStudent(e) {
     e.preventDefault();
@@ -51,7 +56,7 @@ function Students() {
       return;
     }
 
-    setStudents([data[0], ...students]);
+    // Hatuongezi manually — realtime itafetch
     setName('');
     setRegistration('');
     setPhone('');
@@ -66,10 +71,8 @@ function Students() {
     if (error) {
       console.error('Error deleting student:', error);
       alert('Failed to delete student: ' + error.message);
-      return;
     }
-
-    setStudents(students.filter(s => s.id !== id));
+    // Hatuondoi manually — realtime itafetch
   }
 
   return (
