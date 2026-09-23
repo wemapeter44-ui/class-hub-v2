@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SkeletonStatCard } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { useRealtime } from '../hooks/useRealtime';
 
@@ -30,7 +31,6 @@ function Dashboard() {
     fetchStats();
   }, []);
 
-  // Realtime updates kwa tables zote 3
   useRealtime('students', () => fetchStats());
   useRealtime('tasks', () => fetchStats());
   useRealtime('resources', () => fetchStats());
@@ -69,19 +69,29 @@ function Dashboard() {
       <p className="text-slate-400 mb-6">Welcome to your Class Hub</p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map(card => (
-          <div
-            key={card.label}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-4"
-          >
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-              {card.label}
-            </p>
-            <p className={`text-3xl font-bold mt-2 bg-gradient-to-r ${card.color} bg-clip-text text-transparent`}>
-              {loading ? '...' : card.value}
-            </p>
-          </div>
-        ))}
+        {loading ? (
+          <>
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </>
+        ) : (
+          cards.map(card => (
+            <div
+              key={card.label}
+              className="bg-slate-900 border border-slate-800 rounded-xl p-4"
+            >
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                {card.label}
+              </p>
+              <p className={`text-3xl font-bold mt-2 bg-gradient-to-r ${card.color} bg-clip-text text-transparent`}>
+                {card.value}
+              </p>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="mt-8 bg-slate-900 border border-slate-800 rounded-xl p-6">

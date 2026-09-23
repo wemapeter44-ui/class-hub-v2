@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
+import { SkeletonList } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { useRealtime } from '../hooks/useRealtime';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function Resources() {
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const { createNotification } = useNotifications();
+  const { user } = useAuth();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -18,6 +27,7 @@ function Resources() {
 
     if (error) {
       console.error('Error fetching resources:', error);
+      showToast('Failed to load resources', 'error');
       setLoading(false);
       return;
     }
@@ -30,14 +40,16 @@ function Resources() {
     fetchResources();
   }, []);
 
-  // Realtime updates
   useRealtime('resources', () => {
     fetchResources();
   });
 
   async function addResource(e) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      showToast('Please enter a title', 'warning');
+      return;
+    }
 
     const { error } = await supabase
       .from('resources')
@@ -52,17 +64,37 @@ function Resources() {
 
     if (error) {
       console.error('Error adding resource:', error);
-      alert('Failed to add resource: ' + error.message);
+      showToast('Failed to add: ' + error.message, 'error');
       return;
+    }
+
+    if (user) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Resource Added',
+        message: `New resource: "${title.trim()}"`,
+      });
     }
 
     setTitle('');
     setDescription('');
     setLink('');
     setUnit('');
+    showToast('Resource added successfully', 'success');
   }
 
   async function deleteResource(id) {
+    const resource = resources.find(r => r.id === id);
+
+    const confirmed = await confirm({
+      title: 'Delete Resource',
+      message: 'Are you sure you want to delete this resource?',
+      confirmText: 'Delete',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
     const { error } = await supabase
       .from('resources')
       .delete()
@@ -70,8 +102,19 @@ function Resources() {
 
     if (error) {
       console.error('Error deleting resource:', error);
-      alert('Failed to delete resource: ' + error.message);
+      showToast('Failed to delete: ' + error.message, 'error');
+      return;
     }
+
+    if (user && resource) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Resource Deleted',
+        message: `Resource "${resource.title}" has been removed.`,
+      });
+    }
+
+    showToast('Resource deleted', 'success');
   }
 
   return (
@@ -124,7 +167,7 @@ function Resources() {
       </form>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500">Loading resources...</div>
+        <SkeletonList count={3} />
       ) : resources.length === 0 ? (
         <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
           No resources yet. Add one above.

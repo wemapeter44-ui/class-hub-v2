@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
+import { SkeletonList } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { useRealtime } from '../hooks/useRealtime';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function Tasks() {
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const { createNotification } = useNotifications();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -18,6 +27,7 @@ function Tasks() {
 
     if (error) {
       console.error('Error fetching tasks:', error);
+      showToast('Failed to load tasks', 'error');
       setLoading(false);
       return;
     }
@@ -30,14 +40,16 @@ function Tasks() {
     fetchTasks();
   }, []);
 
-  // Realtime updates
   useRealtime('tasks', () => {
     fetchTasks();
   });
 
   async function addTask(e) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      showToast('Please enter a title', 'warning');
+      return;
+    }
 
     const { error } = await supabase
       .from('tasks')
@@ -53,17 +65,37 @@ function Tasks() {
 
     if (error) {
       console.error('Error adding task:', error);
-      alert('Failed to add task: ' + error.message);
+      showToast('Failed to add: ' + error.message, 'error');
       return;
+    }
+
+    if (user) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Task Added',
+        message: `New task: "${title.trim()}"${unit ? ' (' + unit.trim() + ')' : ''}`,
+      });
     }
 
     setTitle('');
     setDescription('');
     setDueDate('');
     setUnit('');
+    showToast('Task added successfully', 'success');
   }
 
   async function deleteTask(id) {
+    const task = tasks.find(t => t.id === id);
+
+    const confirmed = await confirm({
+      title: 'Delete Task',
+      message: 'Are you sure you want to delete this task?',
+      confirmText: 'Delete',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
     const { error } = await supabase
       .from('tasks')
       .delete()
@@ -71,8 +103,19 @@ function Tasks() {
 
     if (error) {
       console.error('Error deleting task:', error);
-      alert('Failed to delete task: ' + error.message);
+      showToast('Failed to delete: ' + error.message, 'error');
+      return;
     }
+
+    if (user && task) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Task Deleted',
+        message: `Task "${task.title}" has been removed.`,
+      });
+    }
+
+    showToast('Task deleted', 'success');
   }
 
   return (
@@ -124,7 +167,7 @@ function Tasks() {
       </form>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500">Loading tasks...</div>
+        <SkeletonList count={3} />
       ) : tasks.length === 0 ? (
         <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
           No tasks yet. Add one above.

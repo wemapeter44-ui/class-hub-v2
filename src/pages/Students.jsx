@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import StudentCard from '../components/StudentCard';
+import { SkeletonGrid } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { useRealtime } from '../hooks/useRealtime';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function Students() {
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
+  const { createNotification } = useNotifications();
+  const { user } = useAuth();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -18,6 +27,7 @@ function Students() {
 
     if (error) {
       console.error('Error fetching students:', error);
+      showToast('Failed to load students', 'error');
       setLoading(false);
       return;
     }
@@ -30,16 +40,18 @@ function Students() {
     fetchStudents();
   }, []);
 
-  // Realtime: fetch data upya kila change inatokea
   useRealtime('students', () => {
     fetchStudents();
   });
 
   async function addStudent(e) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showToast('Please enter a name', 'warning');
+      return;
+    }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('students')
       .insert([
         {
@@ -47,22 +59,41 @@ function Students() {
           registration: registration.trim(),
           phone: phone.trim(),
         },
-      ])
-      .select();
+      ]);
 
     if (error) {
       console.error('Error adding student:', error);
-      alert('Failed to add student: ' + error.message);
+      showToast('Failed to add: ' + error.message, 'error');
       return;
     }
 
-    // Hatuongezi manually — realtime itafetch
+    // Create notification kwa user mwenyewe
+    if (user) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Student Added',
+        message: `${name.trim()} has been added to the class.`,
+      });
+    }
+
     setName('');
     setRegistration('');
     setPhone('');
+    showToast('Student added successfully', 'success');
   }
 
   async function deleteStudent(id) {
+    const student = students.find(s => s.id === id);
+
+    const confirmed = await confirm({
+      title: 'Delete Student',
+      message: 'Are you sure you want to delete this student? This action cannot be undone.',
+      confirmText: 'Delete',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
     const { error } = await supabase
       .from('students')
       .delete()
@@ -70,9 +101,19 @@ function Students() {
 
     if (error) {
       console.error('Error deleting student:', error);
-      alert('Failed to delete student: ' + error.message);
+      showToast('Failed to delete: ' + error.message, 'error');
+      return;
     }
-    // Hatuondoi manually — realtime itafetch
+
+    if (user && student) {
+      await createNotification({
+        user_id: user.id,
+        title: 'Student Deleted',
+        message: `${student.name} has been removed from the class.`,
+      });
+    }
+
+    showToast('Student deleted', 'success');
   }
 
   return (
@@ -116,7 +157,7 @@ function Students() {
       </form>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500">Loading students...</div>
+        <SkeletonGrid count={4} />
       ) : students.length === 0 ? (
         <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
           No students yet. Add one above.

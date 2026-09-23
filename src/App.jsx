@@ -12,7 +12,6 @@ function App() {
   const { user, loading, signOut } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
 
-  // Show loading screen while checking auth
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -21,12 +20,10 @@ function App() {
     );
   }
 
-  // Not logged in → show Login page
   if (!user) {
     return <Login />;
   }
 
-  // Logged in → show app
   function renderPage() {
     switch (activePage) {
       case 'dashboard':
@@ -50,23 +47,23 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex">
-      <div className="flex flex-col">
-        <Sidebar activePage={activePage} onNavigate={setActivePage} />
-        <div className="p-4 border-t border-slate-800 mt-auto">
+      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 pt-16 lg:pt-0">
+          {renderPage()}
+        </div>
+        <div className="p-4 border-t border-slate-800">
           <div className="text-xs text-slate-500 mb-2 truncate">
             {user.email}
           </div>
           <button
             onClick={signOut}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition"
+            className="text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition"
           >
             Sign out
           </button>
         </div>
       </div>
-      <main className="flex-1">
-        {renderPage()}
-      </main>
     </div>
   );
 }
