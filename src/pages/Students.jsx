@@ -9,10 +9,10 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 
 function Students() {
+  const { isAdmin, user } = useAuth();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
   const { createNotification } = useNotifications();
-  const { user } = useAuth();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -67,7 +67,6 @@ function Students() {
       return;
     }
 
-    // Create notification kwa user mwenyewe
     if (user) {
       await createNotification({
         user_id: user.id,
@@ -117,58 +116,82 @@ function Students() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-white mb-2">Students</h1>
-      <p className="text-slate-400 mb-6">
-        {loading ? 'Loading...' : `${students.length} ${students.length === 1 ? 'student' : 'students'}`}
-      </p>
-
-      <form onSubmit={addStudent} className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6">
-        <h2 className="font-semibold text-white mb-3">Add Student</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-          />
-          <input
-            type="text"
-            placeholder="Registration"
-            value={registration}
-            onChange={e => setRegistration(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-          />
-          <input
-            type="text"
-            placeholder="Phone"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
-          />
+    <div className="p-6 lg:p-8 animate-fade-up">
+      {/* Page header */}
+      <div className="flex items-end justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-white tracking-tight">Students</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {loading ? 'Loading...' : `${students.length} ${students.length === 1 ? 'student' : 'students'} enrolled`}
+          </p>
         </div>
-        <button
-          type="submit"
-          className="mt-3 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
-        >
-          Add Student
-        </button>
-      </form>
+      </div>
 
+      {/* Add form — admin only */}
+      {isAdmin && (
+        <div className="bg-slate-900/50 border border-slate-800/60 rounded-xl p-5 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <h2 className="font-semibold text-white text-sm">Add Student</h2>
+          </div>
+          <form onSubmit={addStudent}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <input
+                type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10 transition"
+              />
+              <input
+                type="text"
+                placeholder="Registration number"
+                value={registration}
+                onChange={e => setRegistration(e.target.value)}
+                className="bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10 transition"
+              />
+              <input
+                type="text"
+                placeholder="Phone number"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10 transition"
+              />
+            </div>
+            <button
+              type="submit"
+              className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-indigo-500 text-slate-950 font-semibold text-sm px-4 py-2.5 rounded-lg hover:opacity-90 transition shadow-lg shadow-cyan-500/20"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Student
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* List */}
       {loading ? (
         <SkeletonGrid count={4} />
       ) : students.length === 0 ? (
-        <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-xl">
-          No students yet. Add one above.
+        <div className="text-center py-16 border border-dashed border-slate-800/80 rounded-2xl bg-slate-900/20">
+          <svg className="w-10 h-10 mx-auto mb-3 text-slate-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <p className="text-sm text-slate-500">No students enrolled yet</p>
+          {isAdmin && <p className="text-xs text-slate-600 mt-1">Add one above to get started</p>}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {students.map(student => (
             <StudentCard
               key={student.id}
               student={student}
               onDelete={deleteStudent}
+              canDelete={isAdmin}
             />
           ))}
         </div>

@@ -5,19 +5,49 @@ const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  async function fetchRole(userId) {
+    if (!userId) {
+      setRole(null);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching role:', error);
+      setRole('student');
+      return;
+    }
+
+    setRole(data?.role || 'student');
+  }
+
   useEffect(() => {
-    // Get current session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchRole(currentUser.id);
+      }
       setLoading(false);
     });
 
-    // Listen for auth changes (login, logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          fetchRole(currentUser.id);
+        } else {
+          setRole(null);
+        }
       }
     );
 
@@ -33,14 +63,28 @@ export function AuthProvider({ children }) {
     return data;
   }
 
+  async function signUp(email, password) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+    return data;
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
 
+  const isAdmin = role === 'admin';
+
   const value = {
     user,
+    role,
+    isAdmin,
     loading,
     signIn,
+    signUp,
     signOut,
   };
 
