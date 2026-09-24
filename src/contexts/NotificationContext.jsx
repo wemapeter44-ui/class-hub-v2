@@ -29,7 +29,7 @@ export function NotificationProvider({ children }) {
       return;
     }
 
-    setNotifications(data);
+    setNotifications(data || []);
     setLoading(false);
   }
 
@@ -42,20 +42,22 @@ export function NotificationProvider({ children }) {
     if (!user) return;
 
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
         },
-        () => {
+        (payload) => {
+          console.log('Realtime notification change:', payload);
           fetchNotifications();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Notifications realtime status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -69,7 +71,7 @@ export function NotificationProvider({ children }) {
       .eq('id', id);
 
     if (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error marking as read:', error);
       return;
     }
 
@@ -112,13 +114,24 @@ export function NotificationProvider({ children }) {
   }
 
   async function createNotification({ user_id, title, message }) {
-    const { error } = await supabase
+    console.log('Creating notification:', { user_id, title, message });
+
+    const { data, error } = await supabase
       .from('notifications')
-      .insert([{ user_id, title, message, read: false }]);
+      .insert([{ user_id, title, message, read: false }])
+      .select();
 
     if (error) {
       console.error('Error creating notification:', error);
+      return { error };
     }
+
+    console.log('Notification created:', data);
+
+    // Immediately refresh local state (in case realtime is slow)
+    fetchNotifications();
+
+    return { data };
   }
 
   const unreadCount = notifications.filter(n => !n.read).length;

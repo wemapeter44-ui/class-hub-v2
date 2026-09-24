@@ -17,6 +17,7 @@ function NotificationBell() {
   }, []);
 
   function timeAgo(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
@@ -29,69 +30,244 @@ function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: 'relative' }} ref={ref}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 38,
+          height: 38,
+          borderRadius: 11,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-2)',
+          cursor: 'pointer',
+          transition: 'all .18s ease',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = 'rgba(34,211,238,.35)';
+          e.currentTarget.style.color = 'var(--accent)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = 'var(--border)';
+          e.currentTarget.style.color = 'var(--text-2)';
+        }}
         aria-label="Notifications"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+          <span
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              minWidth: 18,
+              height: 18,
+              padding: '0 5px',
+              borderRadius: 10,
+              background: 'var(--danger)',
+              color: '#fff',
+              fontSize: 10,
+              fontWeight: 800,
+              display: 'grid',
+              placeItems: 'center',
+              boxShadow: '0 0 10px rgba(248,113,113,.6)',
+              border: '2px solid var(--bg)',
+            }}
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="fixed left-64 top-16 w-80 max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[100] overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-900">
-            <h3 className="font-semibold text-white text-sm">Notifications</h3>
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 10px)',
+            right: 0,
+            width: 340,
+            maxWidth: 'calc(100vw - 32px)',
+            maxHeight: 420,
+            background: 'var(--surface)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            boxShadow: 'var(--shadow-lg)',
+            overflow: 'hidden',
+            zIndex: 100,
+            animation: 'fadeUp .2s cubic-bezier(.16,1,.3,1)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', letterSpacing: '-.2px' }}>
+                Notifications
+              </h3>
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    padding: '2px 7px',
+                    borderRadius: 20,
+                    background: 'rgba(34,211,238,.10)',
+                    border: '1px solid rgba(34,211,238,.22)',
+                    color: 'var(--accent)',
+                  }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-cyan-400 hover:text-cyan-300 transition font-medium"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--accent)',
+                  fontWeight: 600,
+                  background: 'none',
+                  border: 0,
+                  cursor: 'pointer',
+                }}
               >
-                Mark all as read
+                Mark all read
               </button>
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto bg-slate-900">
+          {/* List */}
+          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm">
-                No notifications yet
+              <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    margin: '0 auto 12px',
+                    borderRadius: 12,
+                    background: 'var(--gradient-soft)',
+                    border: '1px solid rgba(34,211,238,.14)',
+                    color: 'var(--muted)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--muted)' }}>No notifications yet</p>
               </div>
             ) : (
-              notifications.map(n => (
+              notifications.map((n, i) => (
                 <div
                   key={n.id}
-                  className={`group px-4 py-3 border-b border-slate-800 last:border-b-0 hover:bg-slate-800/60 transition ${
-                    !n.read ? 'bg-cyan-500/5' : ''
-                  }`}
+                  style={{
+                    position: 'relative',
+                    padding: '13px 16px',
+                    borderBottom: i === notifications.length - 1 ? '0' : '1px solid var(--border)',
+                    background: !n.read ? 'rgba(34,211,238,.04)' : 'transparent',
+                    transition: 'background .18s ease',
+                    cursor: !n.read ? 'pointer' : 'default',
+                  }}
+                  onClick={() => !n.read && markAsRead(n.id)}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.03)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = !n.read ? 'rgba(34,211,238,.04)' : 'transparent'; }}
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <div
-                      className="flex-1 cursor-pointer min-w-0"
-                      onClick={() => !n.read && markAsRead(n.id)}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        {!n.read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"></span>}
-                        <p className="font-semibold text-white text-sm truncate">{n.title}</p>
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        marginTop: 6,
+                        flexShrink: 0,
+                        background: !n.read ? 'var(--accent)' : 'var(--muted)',
+                        boxShadow: !n.read ? '0 0 8px rgba(34,211,238,.6)' : 'none',
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: 700,
+                          color: 'var(--text)',
+                          marginBottom: 3,
+                          letterSpacing: '-.1px',
+                        }}
+                      >
+                        {n.title}
                       </div>
-                      <p className="text-slate-300 text-xs leading-relaxed break-words">{n.message}</p>
-                      <p className="text-slate-500 text-xs mt-1">{timeAgo(n.created_at)}</p>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-2)',
+                          lineHeight: 1.5,
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {n.message}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 5, fontWeight: 500 }}>
+                        {timeAgo(n.created_at)}
+                      </div>
                     </div>
                     <button
-                      onClick={() => deleteNotification(n.id)}
-                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(n.id);
+                      }}
+                      style={{
+                        color: 'var(--muted)',
+                        background: 'none',
+                        border: 0,
+                        cursor: 'pointer',
+                        padding: 4,
+                        borderRadius: 6,
+                        flexShrink: 0,
+                        transition: 'all .18s ease',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.color = 'var(--danger)';
+                        e.currentTarget.style.background = 'rgba(248,113,113,.08)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.color = 'var(--muted)';
+                        e.currentTarget.style.background = 'transparent';
+                      }}
                       aria-label="Delete notification"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
                   </div>

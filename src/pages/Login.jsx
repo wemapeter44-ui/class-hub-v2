@@ -12,7 +12,6 @@ function Login({ onSwitchToSignUp }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await signIn(email, password);
     } catch (err) {
@@ -23,77 +22,97 @@ function Login({ onSwitchToSignUp }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-5">
-      <div className="w-full max-w-sm animate-fade-up">
-        <div className="text-center mb-6">
-          <div className="w-11 h-11 mx-auto mb-3 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
-            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+    <div style={{
+      minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 22
+    }}>
+      <div style={{
+        width: 'min(420px, 100%)', padding: '34px 30px 30px',
+        borderRadius: 'var(--radius-lg)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border-strong)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        boxShadow: 'var(--shadow-lg)',
+        position: 'relative', overflow: 'hidden',
+        animation: 'fadeUp .7s cubic-bezier(.16,1,.3,1) both',
+      }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 16, display: 'grid', placeItems: 'center',
+          background: 'var(--gradient)', color: '#04121a',
+          fontWeight: 900, fontSize: 16, letterSpacing: '-.5px',
+          marginBottom: 22,
+          boxShadow: '0 12px 32px -12px rgba(34,211,238,.55)',
+        }}>PD</div>
+        <h1 style={{
+          fontSize: 22, fontWeight: 800, letterSpacing: '-.6px', marginBottom: 6,
+          background: 'linear-gradient(180deg,#fff,#c8d1e0)',
+          WebkitBackgroundClip: 'text', backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>Class Hub</h1>
+        <p style={{ color: 'var(--muted)', fontSize: 12.5, marginBottom: 26, fontWeight: 500 }}>
+          ICT(6)26S M1-C • Sign in to continue
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, marginBottom: 7 }}>Email</label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com" required
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 11,
+                background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)',
+                color: 'var(--text)', outline: 'none', fontSize: 13.5,
+              }}
+            />
           </div>
-          <h1 className="text-lg font-semibold text-white tracking-tight">Class Hub</h1>
-          <p className="text-xs text-slate-500 mt-1">Sign in to your account</p>
-        </div>
-
-        <div className="bg-slate-900/50 border border-slate-800/70 rounded-lg p-5">
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div>
-              <label className="block text-slate-400 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-400 text-[11px] font-medium mb-1.5 uppercase tracking-wider">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/60 focus:ring-2 focus:ring-cyan-500/10 transition"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-md p-2.5 text-xs text-red-400 animate-fade-in">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-white text-slate-950 font-semibold text-sm py-2 rounded-md hover:bg-slate-100 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </form>
-
-          <div className="mt-4 pt-4 border-t border-slate-800/70 text-center">
-            <p className="text-xs text-slate-500">
-              Don't have an account?{' '}
-              <button
-                onClick={onSwitchToSignUp}
-                className="text-cyan-400 hover:text-cyan-300 font-medium transition"
-              >
-                Sign up
-              </button>
-            </p>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, marginBottom: 7 }}>Password</label>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" required
+              style={{
+                width: '100%', padding: '12px 14px', borderRadius: 11,
+                background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)',
+                color: 'var(--text)', outline: 'none', fontSize: 13.5,
+              }}
+            />
           </div>
-        </div>
 
-        <p className="text-center text-[10px] text-slate-600 mt-4 tracking-wider uppercase">
+          {error && (
+            <div style={{
+              color: 'var(--danger)', fontSize: 12, marginTop: 12, textAlign: 'center'
+            }}>{error}</div>
+          )}
+
+          <button
+            type="submit" disabled={loading}
+            style={{
+              width: '100%', marginTop: 6, padding: '12px 18px', borderRadius: 11,
+              background: 'var(--gradient)', color: '#04121a',
+              fontWeight: 700, fontSize: 13, border: 0, cursor: 'pointer',
+              boxShadow: '0 8px 22px -10px rgba(34,211,238,.55)',
+              opacity: loading ? 0.55 : 1,
+            }}
+          >
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', marginTop: 20 }}>
+          Don't have an account?{' '}
+          <button
+            onClick={onSwitchToSignUp}
+            style={{ color: 'var(--accent)', fontWeight: 600, background: 'none', border: 0, cursor: 'pointer' }}
+          >
+            Sign up
+          </button>
+        </p>
+
+        <p style={{
+          textAlign: 'center', fontSize: 10.5, color: 'var(--muted)',
+          marginTop: 20, letterSpacing: '.4px', textTransform: 'uppercase', fontWeight: 600,
+        }}>
           © 2026 PDT Softwares
         </p>
       </div>
