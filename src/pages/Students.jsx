@@ -15,7 +15,7 @@ function Students() {
   const { isAdmin, user } = useAuth();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
-  const { createNotification } = useNotifications();
+  const { createBroadcastNotification } = useNotifications();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -51,15 +51,11 @@ function Students() {
 
     if (error) return showToast('Failed: ' + error.message, 'error');
 
-    // Create notification
-    if (user) {
-      console.log('Attempting to create notification...');
-      await createNotification({
-        user_id: user.id,
-        title: 'Student Added',
-        message: `${name.trim()} has been added to the class.`,
-      });
-    }
+    // Broadcast to all users
+    await createBroadcastNotification({
+      title: 'New Member Added',
+      message: `${name.trim()} has joined the class.`,
+    });
 
     setName(''); setRegistration(''); setPhone('');
     showToast('Student added', 'success');
@@ -78,12 +74,11 @@ function Students() {
     const { error } = await supabase.from('students').delete().eq('id', id);
     if (error) return showToast('Failed: ' + error.message, 'error');
 
-    // Create notification
-    if (user && student) {
-      await createNotification({
-        user_id: user.id,
-        title: 'Student Deleted',
-        message: `${student.name} has been removed.`,
+    // Broadcast to all users
+    if (student) {
+      await createBroadcastNotification({
+        title: 'Member Removed',
+        message: `${student.name} has been removed from the class.`,
       });
     }
 

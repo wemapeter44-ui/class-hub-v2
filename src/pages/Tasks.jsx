@@ -4,6 +4,7 @@ import { useRealtime } from '../hooks/useRealtime';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const ICONS = {
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
@@ -14,6 +15,7 @@ function Tasks() {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
+  const { createBroadcastNotification } = useNotifications();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -43,20 +45,35 @@ function Tasks() {
       status: 'Pending',
     }]);
     if (error) return showToast('Failed: ' + error.message, 'error');
+
+    await createBroadcastNotification({
+      title: 'New Task',
+      message: `${title.trim()}${dueDate ? ' — due ' + dueDate : ''}`,
+    });
+
     setTitle(''); setDescription(''); setDueDate(''); setUnit('');
     showToast('Task added', 'success');
   }
 
   async function deleteTask(id) {
+    const task = tasks.find(t => t.id === id);
     const ok = await confirm({ title: 'Delete Task', message: 'Are you sure?', confirmText: 'Delete', danger: true });
     if (!ok) return;
     const { error } = await supabase.from('tasks').delete().eq('id', id);
     if (error) return showToast('Failed: ' + error.message, 'error');
+
+    if (task) {
+      await createBroadcastNotification({
+        title: 'Task Removed',
+        message: `${task.title} has been removed.`,
+      });
+    }
+
     showToast('Task deleted', 'success');
   }
 
   return (
-    <section className="section active">
+    <>
       <div className="section-head">
         <h2>Class Tasks</h2>
         <span className="meta">{tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}</span>
@@ -138,7 +155,7 @@ function Tasks() {
           })}
         </div>
       )}
-    </section>
+    </>
   );
 }
 

@@ -37,27 +37,19 @@ export function NotificationProvider({ children }) {
     fetchNotifications();
   }, [user]);
 
-  // Realtime listener
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel(`notifications-changes-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-        },
-        (payload) => {
-          console.log('Realtime notification change:', payload);
-          fetchNotifications();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Notifications realtime status:', status);
-      });
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+      }, () => {
+        fetchNotifications();
+      })
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -65,16 +57,10 @@ export function NotificationProvider({ children }) {
   }, [user]);
 
   async function markAsRead(id) {
-    const { error } = await supabase
+    await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', id);
-
-    if (error) {
-      console.error('Error marking as read:', error);
-      return;
-    }
-
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
@@ -82,56 +68,66 @@ export function NotificationProvider({ children }) {
 
   async function markAllAsRead() {
     if (!user) return;
-
     const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
     if (unreadIds.length === 0) return;
-
-    const { error } = await supabase
+    await supabase
       .from('notifications')
       .update({ read: true })
       .in('id', unreadIds);
-
-    if (error) {
-      console.error('Error marking all as read:', error);
-      return;
-    }
-
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }
 
   async function deleteNotification(id) {
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting notification:', error);
-      return;
-    }
-
+    await supabase.from('notifications').delete().eq('id', id);
     setNotifications(prev => prev.filter(n => n.id !== id));
   }
 
+  // Send notification to current user only
   async function createNotification({ user_id, title, message }) {
-    console.log('Creating notification:', { user_id, title, message });
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('notifications')
-      .insert([{ user_id, title, message, read: false }])
-      .select();
-
+      .insert([{ user_id, title, message, read: false }]);
     if (error) {
       console.error('Error creating notification:', error);
       return { error };
     }
-
-    console.log('Notification created:', data);
-
-    // Immediately refresh local state (in case realtime is slow)
     fetchNotifications();
+    return { success: true };
+  }
 
-    return { data };
+  // Broadcast to ALL users (except the sender)
+  async function createBroadcastNotification({ title, message }) {
+    if (!user) return;
+
+    // Fetch all users from user_roles (exclude self)
+    const { data: users, error: usersError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .neq('user_id', user.id);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return;
+    }
+
+    if (!users || users.length === 0) return;
+
+    // Create notifications for each user
+    const rows = users.map(u => ({
+      user_id: u.user_id,
+      title,
+      message,
+      read: false,
+    }));
+
+    const { error } = await supabase.from('notifications').insert(rows);
+
+    if (error) {
+      console.error('Error broadcasting notification:', error);
+      return;
+    }
+
+    console.log(`Broadcast sent to ${rows.length} users`);
   }
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -146,6 +142,7 @@ export function NotificationProvider({ children }) {
         markAllAsRead,
         deleteNotification,
         createNotification,
+        createBroadcastNotification,
         refresh: fetchNotifications,
       }}
     >

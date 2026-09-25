@@ -4,6 +4,7 @@ import { useRealtime } from '../hooks/useRealtime';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirm } from '../contexts/ConfirmContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const ICONS = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
@@ -14,6 +15,7 @@ function Resources() {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const { confirm } = useConfirm();
+  const { createBroadcastNotification } = useNotifications();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -42,20 +44,35 @@ function Resources() {
       unit: unit.trim(),
     }]);
     if (error) return showToast('Failed: ' + error.message, 'error');
+
+    await createBroadcastNotification({
+      title: 'New Resource',
+      message: `${title.trim()}${unit ? ' — ' + unit : ''}`,
+    });
+
     setTitle(''); setDescription(''); setLink(''); setUnit('');
     showToast('Resource added', 'success');
   }
 
   async function deleteResource(id) {
+    const resource = resources.find(r => r.id === id);
     const ok = await confirm({ title: 'Delete Resource', message: 'Are you sure?', confirmText: 'Delete', danger: true });
     if (!ok) return;
     const { error } = await supabase.from('resources').delete().eq('id', id);
     if (error) return showToast('Failed: ' + error.message, 'error');
+
+    if (resource) {
+      await createBroadcastNotification({
+        title: 'Resource Removed',
+        message: `${resource.title} has been removed.`,
+      });
+    }
+
     showToast('Resource deleted', 'success');
   }
 
   return (
-    <section className="section active">
+    <>
       <div className="section-head">
         <h2>Learning Resources</h2>
         <span className="meta">{resources.length} {resources.length === 1 ? 'resource' : 'resources'}</span>
@@ -135,7 +152,7 @@ function Resources() {
           ))}
         </div>
       )}
-    </section>
+    </>
   );
 }
 
