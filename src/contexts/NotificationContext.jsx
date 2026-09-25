@@ -82,7 +82,6 @@ export function NotificationProvider({ children }) {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }
 
-  // Send notification to current user only
   async function createNotification({ user_id, title, message }) {
     const { error } = await supabase
       .from('notifications')
@@ -95,11 +94,9 @@ export function NotificationProvider({ children }) {
     return { success: true };
   }
 
-  // Broadcast to ALL users (except the sender)
   async function createBroadcastNotification({ title, message }) {
     if (!user) return;
 
-    // Fetch all users from user_roles (exclude self)
     const { data: users, error: usersError } = await supabase
       .from('user_roles')
       .select('user_id')
@@ -112,7 +109,6 @@ export function NotificationProvider({ children }) {
 
     if (!users || users.length === 0) return;
 
-    // Create notifications for each user
     const rows = users.map(u => ({
       user_id: u.user_id,
       title,
