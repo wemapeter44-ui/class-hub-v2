@@ -26,7 +26,7 @@ function TopBar({ activePage, onMenuClick }) {
   return (
     <div className="topbar">
       <div className="topbar-left">
-        <button className="mobile-menu" onClick={onMenuClick}>
+        <button className="mobile-menu" onClick={onMenuClick} aria-label="Open menu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M3 12h18M3 6h18M3 18h18" />
           </svg>
@@ -46,6 +46,7 @@ function TopBar({ activePage, onMenuClick }) {
           <button
             className="user-menu-btn"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="User menu"
           >
             <div className="user-avatar">
               {user?.email?.charAt(0).toUpperCase()}

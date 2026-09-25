@@ -23,33 +23,49 @@ function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
   }, [onClose]);
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      <div className="brand">
-        <div className="logo">PD</div>
-        <div className="brand-text">
-          <strong>CLASS HUB</strong>
-          <span>ICT(6)26S M1-C</span>
+    <>
+      {isOpen && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,.7)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            zIndex: 998,
+            animation: 'fadeIn .2s ease',
+          }}
+        />
+      )}
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+        <div className="brand">
+          <div className="logo">PD</div>
+          <div className="brand-text">
+            <strong>CLASS HUB</strong>
+            <span>ICT(6)26S M1-C</span>
+          </div>
         </div>
-      </div>
-      <nav className="nav">
-        {links.map(link => (
-          <button
-            key={link.id}
-            className={activePage === link.id ? 'active' : ''}
-            onClick={() => handleNavigate(link.id)}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-              <path d={link.icon} />
-            </svg>
-            {link.label}
-          </button>
-        ))}
-      </nav>
-      <div className="sidebar-footer">
-        <span className="status-pulse"></span>
-        <span>Connected · Live sync</span>
-      </div>
-    </aside>
+        <nav className="nav">
+          {links.map(link => (
+            <button
+              key={link.id}
+              className={activePage === link.id ? 'active' : ''}
+              onClick={() => handleNavigate(link.id)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <path d={link.icon} />
+              </svg>
+              {link.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <span className="status-pulse"></span>
+          <span>Connected · Live sync</span>
+        </div>
+      </aside>
+    </>
   );
 }
 
