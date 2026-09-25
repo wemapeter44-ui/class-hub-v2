@@ -3,7 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 
 function Login({ onSwitchToSignUp }) {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    try {
+      return localStorage.getItem('lastEmail') || '';
+    } catch {
+      return '';
+    }
+  });
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -12,7 +18,13 @@ function Login({ onSwitchToSignUp }) {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
+      // Save email for next time
+      try {
+        localStorage.setItem('lastEmail', email);
+      } catch {}
+
       await signIn(email, password);
     } catch (err) {
       setError(err.message || 'Failed to sign in');
@@ -22,9 +34,7 @@ function Login({ onSwitchToSignUp }) {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 22
-    }}>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 22 }}>
       <div style={{
         width: 'min(420px, 100%)', padding: '34px 30px 30px',
         borderRadius: 'var(--radius-lg)',
@@ -80,9 +90,7 @@ function Login({ onSwitchToSignUp }) {
           </div>
 
           {error && (
-            <div style={{
-              color: 'var(--danger)', fontSize: 12, marginTop: 12, textAlign: 'center'
-            }}>{error}</div>
+            <div style={{ color: 'var(--danger)', fontSize: 12, marginTop: 12, textAlign: 'center' }}>{error}</div>
           )}
 
           <button
