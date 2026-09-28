@@ -1,21 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useRealtime } from '../hooks/useRealtime';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
-import { useConfirm } from '../contexts/ConfirmContext';
-import { useNotifications } from '../contexts/NotificationContext';
-
-function initials(name) {
-  return String(name || '?').trim().split(/\s+/).slice(0, 2)
-    .map(w => w[0] || '').join('').toUpperCase() || '?';
-}
 
 function Students() {
-  const { isAdmin, user } = useAuth();
-  const { showToast } = useToast();
-  const { confirm } = useConfirm();
-  const { createBroadcastNotification } = useNotifications();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -24,167 +10,84 @@ function Students() {
 
   async function fetchStudents() {
     const { data, error } = await supabase
-      .from('students')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      showToast('Failed to load students', 'error');
-      setLoading(false);
-      return;
-    }
-    setStudents(data);
+      .from('students').select('*').order('created_at', { ascending: false });
+    if (error) { setLoading(false); return; }
+    setStudents(data || []);
     setLoading(false);
   }
 
   useEffect(() => { fetchStudents(); }, []);
-  useRealtime('students', () => fetchStudents());
 
   async function addStudent(e) {
     e.preventDefault();
-    if (!name.trim()) return showToast('Enter student name', 'warning');
-
+    if (!name.trim()) return;
     const { error } = await supabase.from('students').insert([{
       name: name.trim(),
       registration: registration.trim(),
       phone: phone.trim(),
     }]);
-
-    if (error) return showToast('Failed: ' + error.message, 'error');
-
-    // Broadcast to all users
-    await createBroadcastNotification({
-      title: 'New Member Added',
-      message: `${name.trim()} has joined the class.`,
-    });
-
+    if (error) { alert('Error: ' + error.message); return; }
     setName(''); setRegistration(''); setPhone('');
-    showToast('Student added', 'success');
+    fetchStudents();
   }
 
   async function deleteStudent(id) {
-    const student = students.find(s => s.id === id);
-    const ok = await confirm({
-      title: 'Delete Student',
-      message: 'Are you sure? This cannot be undone.',
-      confirmText: 'Delete',
-      danger: true,
-    });
-    if (!ok) return;
+    if (!confirm('Delete this student?')) return;
+    await supabase.from('students').delete().eq('id', id);
+    fetchStudents();
+  }
 
-    const { error } = await supabase.from('students').delete().eq('id', id);
-    if (error) return showToast('Failed: ' + error.message, 'error');
-
-    // Broadcast to all users
-    if (student) {
-      await createBroadcastNotification({
-        title: 'Member Removed',
-        message: `${student.name} has been removed from the class.`,
-      });
-    }
-
-    showToast('Student deleted', 'success');
+  function initials(n) {
+    return String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
   }
 
   return (
-    <>
-      <div className="section-head">
-        <h2>Class Members</h2>
-        <span className="meta">{students.length} {students.length === 1 ? 'student' : 'students'}</span>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">Class Members</h1>
+        <p className="text-sm text-green-400 mt-1">{students.length} students</p>
       </div>
 
-      {isAdmin && (
-        <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-          <div className="section-head" style={{ marginBottom: 16 }}>
-            <h2>Add Student</h2>
-          </div>
-          <form onSubmit={addStudent}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, marginBottom: 7 }}>Name</label>
-                <input
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Student full name"
-                  style={{
-                    width: '100%', padding: '12px 14px', borderRadius: 11,
-                    background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)',
-                    color: 'var(--text)', outline: 'none', fontSize: 13.5
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, marginBottom: 7 }}>Registration</label>
-                <input
-                  value={registration}
-                  onChange={e => setRegistration(e.target.value)}
-                  placeholder="Registration number"
-                  style={{
-                    width: '100%', padding: '12px 14px', borderRadius: 11,
-                    background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)',
-                    color: 'var(--text)', outline: 'none', fontSize: 13.5
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, marginBottom: 7 }}>Phone</label>
-                <input
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="Phone number"
-                  style={{
-                    width: '100%', padding: '12px 14px', borderRadius: 11,
-                    background: 'rgba(255,255,255,.03)', border: '1px solid var(--border)',
-                    color: 'var(--text)', outline: 'none', fontSize: 13.5
-                  }}
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              style={{
-                marginTop: 16, padding: '12px 18px', borderRadius: 11,
-                background: 'var(--gradient)', color: '#04121a',
-                fontWeight: 700, fontSize: 13, border: 0, cursor: 'pointer',
-                boxShadow: '0 8px 22px -10px rgba(34,211,238,.55)'
-              }}
-            >
-              Add Student
-            </button>
-          </form>
+      <form onSubmit={addStudent} className="bg-[#0d1a0d] border border-green-900/30 rounded-lg p-5 mb-6">
+        <h2 className="text-sm font-semibold text-white mb-4">Add Student</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input type="text" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} required
+            className="bg-[#0a120a] border border-green-900/40 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-green-700" />
+          <input type="text" placeholder="Registration" value={registration} onChange={e => setRegistration(e.target.value)}
+            className="bg-[#0a120a] border border-green-900/40 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-green-700" />
+          <input type="text" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)}
+            className="bg-[#0a120a] border border-green-900/40 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-green-700" />
         </div>
-      )}
+        <button type="submit" className="mt-4 bg-green-800 hover:bg-green-700 text-white font-semibold text-sm px-4 py-2 rounded-md transition">
+          Add Student
+        </button>
+      </form>
 
       {loading ? (
-        <div className="sk-row"><div className="sk sk-line"></div><div className="sk sk-line short"></div></div>
+        <p className="text-green-400 text-sm">Loading...</p>
       ) : students.length === 0 ? (
-        <div className="empty">
-          <div className="empty-icon" dangerouslySetInnerHTML={{ __html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' }} />
-          <h4>No members yet</h4>
-          <p>Class members will appear here once added.</p>
+        <div className="bg-[#0d1a0d] border border-green-900/30 rounded-lg p-8 text-center">
+          <p className="text-sm text-green-500/70">No students yet</p>
         </div>
       ) : (
-        <div className="members">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {students.map(s => (
-            <div key={s.id} className="member">
-              <div className="avatar">{initials(s.name)}</div>
-              <div className="member-info">
-                <strong>{s.name}</strong>
-                <p>{s.registration || 'No registration'}</p>
+            <div key={s.id} className="bg-[#0d1a0d] border border-green-900/30 rounded-lg p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-900/40 border border-green-900/50 flex items-center justify-center text-green-400 text-xs font-bold flex-shrink-0">
+                {initials(s.name)}
               </div>
-              {isAdmin && (
-                <button
-                  className="link-btn"
-                  style={{ background: 'rgba(248,113,113,.10)', borderColor: 'rgba(248,113,113,.22)', color: 'var(--danger)', marginTop: 0, marginLeft: 0, padding: '6px 10px', fontSize: 11 }}
-                  onClick={() => deleteStudent(s.id)}
-                >
-                  Delete
-                </button>
-              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm truncate">{s.name}</p>
+                <p className="text-green-500/80 text-xs mt-0.5 truncate">{s.registration || 'No registration'}</p>
+              </div>
+              <button onClick={() => deleteStudent(s.id)} className="text-red-400 hover:text-red-300 text-xs flex-shrink-0">
+                Delete
+              </button>
             </div>
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 

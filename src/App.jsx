@@ -4,6 +4,10 @@ import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
+import Timetable from './pages/Timetable';
+import Tasks from './pages/Tasks';
+import Resources from './pages/Resources';
+import Announcements from './pages/Announcements';
 
 function App() {
   const { user, loading } = useAuth();
@@ -24,11 +28,11 @@ function App() {
   function renderPage() {
     switch (activePage) {
       case 'home': return <Dashboard />;
-      case 'timetable': return <Dashboard />;
+      case 'timetable': return <Timetable />;
       case 'members': return <Students />;
-      case 'announcements': return <Dashboard />;
-      case 'tasks': return <Dashboard />;
-      case 'resources': return <Dashboard />;
+      case 'announcements': return <Announcements />;
+      case 'tasks': return <Tasks />;
+      case 'resources': return <Resources />;
       default: return <Dashboard />;
     }
   }
