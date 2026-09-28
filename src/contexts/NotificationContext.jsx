@@ -37,6 +37,7 @@ export function NotificationProvider({ children }) {
     fetchNotifications();
   }, [user]);
 
+  // Realtime listener
   useEffect(() => {
     if (!user) return;
 
@@ -94,6 +95,7 @@ export function NotificationProvider({ children }) {
     return { success: true };
   }
 
+  // Send notification to ALL users except self
   async function createBroadcastNotification({ title, message }) {
     if (!user) return;
 
@@ -107,7 +109,10 @@ export function NotificationProvider({ children }) {
       return;
     }
 
-    if (!users || users.length === 0) return;
+    if (!users || users.length === 0) {
+      console.log('No other users to notify');
+      return;
+    }
 
     const rows = users.map(u => ({
       user_id: u.user_id,
