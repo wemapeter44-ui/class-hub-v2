@@ -13,12 +13,12 @@ function Sidebar({ activePage, onNavigate }) {
   ];
 
   return (
-    <aside className="w-64 bg-[#0d1a0d] border-r border-green-900/40 min-h-screen flex flex-col">
-      <div className="p-5 border-b border-green-900/40 flex items-center gap-3">
+    <aside className="w-64 bg-[#0b120b] border-r border-green-900/30 min-h-screen flex flex-col">
+      <div className="p-5 border-b border-green-900/30 flex items-center gap-3">
         <img src="/kcnp-logo.png" alt="KCNP" className="w-11 h-11 object-contain" />
         <div>
           <h1 className="text-sm font-bold text-white leading-tight">CLASS HUB</h1>
-          <p className="text-[10px] text-green-400 mt-0.5">Kenya Coast National Polytechnic</p>
+          <p className="text-[10px] text-green-500 mt-0.5">KCNP</p>
         </div>
       </div>
 
@@ -29,8 +29,8 @@ function Sidebar({ activePage, onNavigate }) {
             onClick={() => onNavigate(link.id)}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition ${
               activePage === link.id
-                ? 'bg-green-600 text-white'
-                : 'text-green-200 hover:bg-green-900/40 hover:text-white'
+                ? 'bg-green-800/60 text-white'
+                : 'text-green-200/80 hover:bg-green-900/30 hover:text-white'
             }`}
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -41,10 +41,10 @@ function Sidebar({ activePage, onNavigate }) {
         ))}
       </nav>
 
-      <div className="p-3 border-t border-green-900/40">
+      <div className="p-3 border-t border-green-900/30">
         <button
           onClick={signOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-400 hover:bg-red-500/10 transition"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-400/90 hover:bg-red-500/10 transition"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -53,7 +53,7 @@ function Sidebar({ activePage, onNavigate }) {
         </button>
       </div>
 
-      <div className="px-4 py-2 text-[10px] text-green-600 text-center border-t border-green-900/40">
+      <div className="px-4 py-2 text-[10px] text-green-800 text-center border-t border-green-900/30">
         © 2026 PDT Softwares
       </div>
     </aside>
