@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-function Login() {
+function Login({ onNavigate }) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -98,6 +98,17 @@ function Login() {
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
+
+          <p className="text-center text-xs text-green-400 pt-1">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={() => onNavigate('signup')}
+              className="text-yellow-500 hover:text-yellow-400 font-medium underline"
+            >
+              Sign up
+            </button>
+          </p>
         </form>
 
         <p className="text-center text-[10px] text-green-500 mt-6 tracking-wider uppercase">

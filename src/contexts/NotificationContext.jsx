@@ -10,7 +10,10 @@ export function NotificationProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   async function fetchNotifications() {
+    console.log('[NOTIF] fetchNotifications called. User:', user?.id);
+
     if (!user) {
+      console.log('[NOTIF] No user — clearing notifications');
       setNotifications([]);
       setLoading(false);
       return;
@@ -23,8 +26,15 @@ export function NotificationProvider({ children }) {
       .order('created_at', { ascending: false })
       .limit(20);
 
+    console.log('[NOTIF] Query result:', {
+      userId: user.id,
+      error,
+      count: data?.length,
+      data,
+    });
+
     if (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('[NOTIF] Error fetching notifications:', error);
       setLoading(false);
       return;
     }
@@ -34,23 +44,27 @@ export function NotificationProvider({ children }) {
   }
 
   useEffect(() => {
+    console.log('[NOTIF] useEffect triggered — user changed');
     fetchNotifications();
   }, [user]);
 
-  // Realtime listener
   useEffect(() => {
     if (!user) return;
+    console.log('[NOTIF] Subscribing to realtime for user:', user.id);
 
     const channel = supabase
       .channel(`notifications-${user.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'notifications',
-      }, () => {
-        fetchNotifications();
-      })
-      .subscribe();
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        (payload) => {
+          console.log('[NOTIF] Realtime event:', payload);
+          fetchNotifications();
+        }
+      )
+      .subscribe((status) => {
+        console.log('[NOTIF] Realtime status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -58,29 +72,23 @@ export function NotificationProvider({ children }) {
   }, [user]);
 
   async function markAsRead(id) {
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', id);
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, read: true } : n))
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
   }
 
   async function markAllAsRead() {
     if (!user) return;
-    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .in('id', unreadIds);
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }
 
   async function deleteNotification(id) {
     await supabase.from('notifications').delete().eq('id', id);
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
   async function createNotification({ user_id, title, message }) {
@@ -88,50 +96,30 @@ export function NotificationProvider({ children }) {
       .from('notifications')
       .insert([{ user_id, title, message, read: false }]);
     if (error) {
-      console.error('Error creating notification:', error);
+      console.error('[NOTIF] createNotification error:', error);
       return { error };
     }
     fetchNotifications();
     return { success: true };
   }
 
-  // Send notification to ALL users except self
   async function createBroadcastNotification({ title, message }) {
     if (!user) return;
-
-    const { data: users, error: usersError } = await supabase
+    const { data: users, error } = await supabase
       .from('user_roles')
       .select('user_id')
       .neq('user_id', user.id);
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError);
-      return;
-    }
-
-    if (!users || users.length === 0) {
-      console.log('No other users to notify');
-      return;
-    }
-
-    const rows = users.map(u => ({
+    if (error || !users || users.length === 0) return;
+    const rows = users.map((u) => ({
       user_id: u.user_id,
       title,
       message,
       read: false,
     }));
-
-    const { error } = await supabase.from('notifications').insert(rows);
-
-    if (error) {
-      console.error('Error broadcasting notification:', error);
-      return;
-    }
-
-    console.log(`Broadcast sent to ${rows.length} users`);
+    await supabase.from('notifications').insert(rows);
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <NotificationContext.Provider
@@ -154,8 +142,6 @@ export function NotificationProvider({ children }) {
 
 export function useNotifications() {
   const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
-  }
+  if (!context) throw new Error('useNotifications must be used within NotificationProvider');
   return context;
 }
