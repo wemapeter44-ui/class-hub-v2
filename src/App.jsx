@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import BottomNav from './components/BottomNav';
+import AppHeader from './components/AppHeader';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +11,9 @@ import Students from './pages/Students';
 import Timetable from './pages/Timetable';
 import Tasks from './pages/Tasks';
 import Resources from './pages/Resources';
+import Profile from './pages/Profile';
+import About from './pages/About';
+import Privacy from './pages/Privacy';
 
 function App() {
   const { user, loading } = useAuth();
@@ -18,8 +23,8 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a120a] flex items-center justify-center">
-        <p className="text-green-400 text-sm">Loading...</p>
+      <div className="min-h-screen bg-[#f5f3ff] dark:bg-[#0b0918] flex items-center justify-center transition-colors">
+        <div className="w-8 h-8 rounded-full border-2 border-violet-200 dark:border-[#2a2148] border-t-violet-500 animate-spin" />
       </div>
     );
   }
@@ -36,42 +41,45 @@ function App() {
       case 'members': return <Students />;
       case 'tasks': return <Tasks />;
       case 'resources': return <Resources />;
+      case 'profile': return <Profile onBack={() => setActivePage('home')} onNavigate={setActivePage} />;
+      case 'about': return <About onBack={() => setActivePage('profile')} />;
+      case 'privacy': return <Privacy onBack={() => setActivePage('profile')} />;
       default: return <Dashboard />;
     }
   }
 
+  const showChrome = activePage !== 'profile' && activePage !== 'about' && activePage !== 'privacy';
+
   return (
-    <div className="min-h-screen bg-[#0a120a] flex">
-      <Sidebar
-        activePage={activePage}
-        onNavigate={(page) => {
-          setActivePage(page);
-          setMobileMenuOpen(false);
-        }}
-        mobileOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-      />
-
-      <main className="flex-1 min-w-0 relative">
-        <div
-          className="fixed inset-0 pointer-events-none hidden md:block"
-          style={{
-            backgroundImage: 'url(/kcnp-campus.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            marginLeft: '16rem',
-            opacity: 0.08,
-          }}
-        ></div>
-
-        <div className="relative z-10">
-          <TopBar
+    <div className="min-h-screen bg-[#f5f3ff] dark:bg-[#0b0918] flex relative transition-colors">
+      {showChrome && (
+        <div className="hidden md:block">
+          <Sidebar
             activePage={activePage}
-            onMenuClick={() => setMobileMenuOpen(true)}
+            onNavigate={setActivePage}
+            mobileOpen={false}
+            onClose={() => {}}
           />
+        </div>
+      )}
+
+      <main className="flex-1 min-w-0 relative z-10">
+        {showChrome && <AppHeader user={user} onAvatarClick={() => setActivePage('profile')} />}
+
+        {showChrome && (
+          <div className="hidden md:block">
+            <TopBar activePage={activePage} onMenuClick={() => {}} />
+          </div>
+        )}
+
+        <div className={`animate-fade-up ${showChrome ? 'pb-20 md:pb-0' : ''}`}>
           {renderPage()}
         </div>
       </main>
+
+      {showChrome && (
+        <BottomNav activePage={activePage} onNavigate={setActivePage} />
+      )}
     </div>
   );
 }

@@ -1,0 +1,209 @@
+import { useEffect, useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+
+function Dashboard() {
+  const { user } = useAuth();
+  const [students, setStudents] = useState(0);
+  const [tasks, setTasks] = useState(0);
+  const [todayClasses, setTodayClasses] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+
+  const MODULES = 7;
+
+  const now = new Date();
+  const greeting =
+    now.getHours() < 12 ? 'Good morning'
+    : now.getHours() < 17 ? 'Good afternoon'
+    : 'Good evening';
+  const today = now.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+  const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+
+  useEffect(() => {
+    async function load() {
+      const [s, t, tt, an] = await Promise.all([
+        supabase.from('students').select('*', { count: 'exact', head: true }),
+        supabase.from('tasks').select('*', { count: 'exact', head: true }),
+        supabase.from('timetable').select('*').eq('day', dayName),
+        supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(1),
+      ]);
+      setStudents(s.count || 0);
+      setTasks(t.count || 0);
+      setTodayClasses((tt.data || []).sort((a, b) => a.start_time.localeCompare(b.start_time)));
+      setAnnouncements(an.data || []);
+    }
+    load();
+  }, [dayName]);
+
+  function getStatus(start, end) {
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = String(start).split(':').map(Number);
+    const [eh, em] = String(end).split(':').map(Number);
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (nowMin < startMin) return 'incoming';
+    if (nowMin >= startMin && nowMin < endMin) return 'in-progress';
+    return 'ended';
+  }
+
+  const statusStyle = {
+    incoming: 'text-violet-600 bg-violet-50 border-violet-200',
+    'in-progress': 'text-amber-700 bg-amber-50 border-amber-200',
+    ended: 'text-gray-500 bg-gray-100 border-gray-200',
+  };
+
+  const statusLabel = {
+    incoming: 'Incoming',
+    'in-progress': 'Live now',
+    ended: 'Ended',
+  };
+
+  const stats = [
+    { label: 'Members', value: students, icon: 'users', color: '#8b5cf6', bg: '#ede9fe' },
+    { label: 'Modules', value: MODULES, icon: 'book', color: '#3b82f6', bg: '#dbeafe' },
+    { label: 'Lessons', value: todayClasses.length, icon: 'calendar', color: '#10b981', bg: '#d1fae5' },
+    { label: 'Tasks', value: tasks, icon: 'check', color: '#f59e0b', bg: '#fef3c7' },
+  ];
+
+  const iconPaths = {
+    users: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 1 8 0M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+    book: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z',
+    calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    check: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+  };
+
+  return (
+    <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8 max-w-6xl mx-auto">
+
+      {/* Welcome card with violet gradient */}
+      <div className="brand-gradient rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden shadow-xl shadow-violet-500/20">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 w-52 h-52 bg-white/5 rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
+            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/90">
+              Class Hub · KCNP
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-tight">
+            {greeting}, welcome back 👋
+          </h1>
+          <p className="text-sm text-white/80 mt-2 max-w-lg">
+            {today}
+          </p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+        {stats.map((s) => (
+          <div key={s.label} className="surface p-4 md:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-gray-500">
+                {s.label}
+              </p>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: s.bg, color: s.color }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={iconPaths[s.icon]} />
+                </svg>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-[#1e1b4b] tabular-nums leading-none tracking-tight">
+              {s.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Class Overview */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-[#1e1b4b] tracking-tight">
+            Class Overview
+          </h2>
+          <span className="text-xs text-gray-500 font-medium">{dayName}</span>
+        </div>
+
+        {todayClasses.length === 0 ? (
+          <div className="surface p-10 md:p-14 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center mx-auto mb-4">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-[#1e1b4b]">No classes scheduled today</p>
+            <p className="text-xs text-gray-500 mt-1">Enjoy your {dayName} — see you tomorrow.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {todayClasses.map((c) => {
+              const status = getStatus(c.start_time, c.end_time);
+              return (
+                <div key={c.id} className="surface p-4 md:p-5">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#1e1b4b] truncate">
+                        {c.unit}
+                      </p>
+                      <p className="text-xs text-gray-500 tabular-nums mt-0.5">
+                        {c.start_time} – {c.end_time}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusStyle[status]}`}>
+                      {statusLabel[status]}
+                    </span>
+                  </div>
+                  {(c.lecturer || c.room) && (
+                    <div className="flex items-center gap-4 flex-wrap text-xs text-gray-600">
+                      {c.lecturer && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 7a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" />
+                          </svg>
+                          {c.lecturer}
+                        </span>
+                      )}
+                      {c.room && (
+                        <span className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+                          </svg>
+                          {c.room}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Announcement */}
+      {announcements.length > 0 && (
+        <section>
+          <h2 className="text-base font-semibold text-[#1e1b4b] tracking-tight mb-4">
+            Latest Announcement
+          </h2>
+          <div className="surface p-5 md:p-6 border-l-4 border-l-amber-400">
+            <p className="text-sm font-semibold text-[#1e1b4b]">
+              {announcements[0].title}
+            </p>
+            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+              {announcements[0].message}
+            </p>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+export default Dashboard;

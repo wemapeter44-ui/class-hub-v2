@@ -6,17 +6,20 @@ import { AuthProvider } from './contexts/AuthContext.jsx';
 import { ToastProvider } from './contexts/ToastContext.jsx';
 import { ConfirmProvider } from './contexts/ConfirmContext.jsx';
 import { NotificationProvider } from './contexts/NotificationContext.jsx';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <ToastProvider>
-        <ConfirmProvider>
-          <NotificationProvider>
-            <App />
-          </NotificationProvider>
-        </ConfirmProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              <App />
+            </ConfirmProvider>
+          </ToastProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>
 );

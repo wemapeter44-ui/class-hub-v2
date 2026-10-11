@@ -15,7 +15,7 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onClose }) {
     <>
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-[#1e1b4b]/40 backdrop-blur-sm z-40 md:hidden"
           onClick={onClose}
         />
       )}
@@ -24,23 +24,24 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onClose }) {
         className={`
           fixed md:static top-0 left-0 z-50 md:z-auto
           w-64 h-screen md:h-auto md:min-h-screen
-          bg-[#0b120b]/80 md:bg-[#0b120b]/70
-          backdrop-blur-xl
-          border-r border-green-900/30
-          flex flex-col
+          bg-white border-r border-[#e9e5ff]
+          flex flex-col shadow-sm
           transform transition-transform duration-300
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        <div className="p-5 border-b border-green-900/30 flex items-center gap-3">
-          <img src="/kcnp-logo.png" alt="KCNP" className="w-11 h-11 object-contain" />
+        {/* Brand header */}
+        <div className="p-5 border-b border-[#e9e5ff] flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center overflow-hidden">
+            <img src="/kcnp-logo.png" alt="KCNP" className="w-9 h-9 object-contain" />
+          </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-white leading-tight">CLASS HUB</h1>
-            <p className="text-[10px] text-green-500 mt-0.5">KCNP</p>
+            <h1 className="text-sm font-bold text-[#1e1b4b] leading-tight">CLASS HUB</h1>
+            <p className="text-[10px] text-violet-500 mt-0.5 font-medium">KCNP</p>
           </div>
           <button
             onClick={onClose}
-            className="md:hidden text-green-400 hover:text-white p-1"
+            className="md:hidden text-gray-400 hover:text-[#1e1b4b] p-1"
             aria-label="Close menu"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -49,29 +50,45 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onClose }) {
           </button>
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {links.map(link => (
-            <button
-              key={link.id}
-              onClick={() => onNavigate(link.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition ${
-                activePage === link.id
-                  ? 'bg-green-800/60 text-white'
-                  : 'text-green-200/80 hover:bg-green-900/30 hover:text-white'
-              }`}
-            >
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d={link.icon} />
-              </svg>
-              <span className="truncate">{link.label}</span>
-            </button>
-          ))}
+          <p className="px-3 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">
+            Main
+          </p>
+          {links.map(link => {
+            const isActive = activePage === link.id;
+            return (
+              <button
+                key={link.id}
+                onClick={() => onNavigate(link.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-violet-600 text-white shadow-md shadow-violet-500/25'
+                    : 'text-gray-600 hover:bg-violet-50 hover:text-[#1e1b4b]'
+                }`}
+              >
+                <svg
+                  className="w-4 h-4 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d={link.icon} />
+                </svg>
+                <span className="truncate">{link.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="p-3 border-t border-green-900/30">
+        {/* Sign out */}
+        <div className="p-3 border-t border-[#e9e5ff]">
           <button
             onClick={signOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-red-400/90 hover:bg-red-500/10 transition"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -80,7 +97,8 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onClose }) {
           </button>
         </div>
 
-        <div className="px-4 py-2 text-[10px] text-green-800 text-center border-t border-green-900/30">
+        {/* Footer */}
+        <div className="px-4 py-2.5 text-[10px] text-gray-400 text-center border-t border-[#e9e5ff]">
           © 2026 PDT Softwares
         </div>
       </aside>
